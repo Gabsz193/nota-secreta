@@ -94,8 +94,7 @@ class Versao1(BaseAgent):
 
     @tool()
     async def send_clue(self, lyrics: str, max_words: int = 6) -> Dict[str, Any]:
-        short_lyrics = shorten_lyrics(lyrics)
-        short_lyrics = " ".join(short_lyrics.split()[:100])
+        short_lyrics = " ".join(lyrics.split()[:100])
         prompt = (
             f"Voce e um jogador de Dixit jogando com musicas. "
             f"Descreva o TEMA dessa musica usando no maximo {max_words} palavras. "
@@ -104,6 +103,8 @@ class Versao1(BaseAgent):
             "Dica:"
         )
 
+        logger.info(f"--- NARRADOR: PROMPT SEND_CLUE ---\n{prompt}\n---------------------------------")
+
         clue = "coisa estranha"
         raw_response = ""
         try:
@@ -111,6 +112,7 @@ class Versao1(BaseAgent):
                 prompt, max_tokens=15, temperature=0.3, stop=["\n", "###", "Letra:"]
             )
             raw_response = raw
+            logger.info(f"--- NARRADOR: RESPOSTA SEND_CLUE ---\n{raw}\n------------------------------------")
             raw = raw.strip().replace('"', '').replace('.', '')
             if raw:
                 clue_sanitized = self._sanitize_clue(raw, max_words=max_words, lyrics=lyrics)
@@ -149,9 +151,12 @@ class Versao1(BaseAgent):
             short_lyrics = " ".join(short_lyrics.split()[:40])
             prompt += f"Opcao {i}: {short_lyrics}\n\n"
 
+        logger.info(f"--- JOGADOR: PROMPT SELECT_CARD ---\n{prompt}\n-----------------------------------")
+
         chosen_idx = random.randrange(len(self.hand))
         try:
             raw = await self.llm_generate(prompt, max_tokens=10, temperature=0.2)
+            logger.info(f"--- JOGADOR: RESPOSTA SELECT_CARD ---\n{raw}\n--------------------------------------")
             numbers = re.findall(r'[0-3]', raw)
             if numbers:
                 chosen_idx = int(numbers[0])
@@ -179,12 +184,15 @@ class Versao1(BaseAgent):
             short_lyrics = " ".join(short_lyrics.split()[:30])
             prompt += f"Opcao {i}: {short_lyrics}\n\n"
 
+        logger.info(f"--- JOGADOR: PROMPT VOTE ---\n{prompt}\n----------------------------")
+
         possible_votes = [i for i in range(len(options)) if i != my_idx]
         random.shuffle(possible_votes)
         votes = possible_votes[:2]
 
         try:
             raw = await self.llm_generate(prompt, max_tokens=15, temperature=0.2)
+            logger.info(f"--- JOGADOR: RESPOSTA VOTE ---\n{raw}\n------------------------------")
             numbers = [int(n) for n in re.findall(r'[0-5]', raw) if int(n) != my_idx]
             
             unique_nums = []
