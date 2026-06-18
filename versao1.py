@@ -96,11 +96,22 @@ class Versao1(BaseAgent):
     async def send_clue(self, lyrics: str, max_words: int = 6) -> Dict[str, Any]:
         short_lyrics = " ".join(lyrics.split()[:100])
         prompt = (
-            f"Voce e um jogador de Dixit jogando com musicas. "
-            f"Descreva o TEMA dessa musica usando no maximo {max_words} palavras. "
-            "Nao repita palavras do texto nem o titulo. Responda APENAS a dica curta e nada mais.\n\n"
-            f"Letra:\n{short_lyrics}\n\n"
-            "Dica:"
+            "Contexto: "
+            "Voce eh um jogador de Dixit jogando com musicas.\n"
+            "Instrução: "
+            f"Dado a letra da música, forneça uma dica usando no maximo {max_words} palavras. "
+            "Lembre-se: a dica deve ser criativa, mas não pode ser muito difícil de adivinhar. Por exemplo, não utilize as "
+            "mesmas palavras da letra ou do titulo da musica. Use sinonimos e outras palavras relacionadas ao tema da musica.\n"
+            "Entrada: "
+            f"Letra:\n{short_lyrics}\n\n"            "### Resposta: 2\n"
+
+            "Formato: "
+            "### Resposta: n\n"
+            "Exemplos: "
+            "### Resposta: 1\n"
+            "### Resposta: 2\n"
+            "### Resposta: 3\n"
+            "Saída: "
         )
 
         logger.info(f"--- NARRADOR: PROMPT SEND_CLUE ---\n{prompt}\n---------------------------------")
