@@ -215,8 +215,7 @@ class Versao2(BaseAgent):
         my_idx = next(i for i, opt in enumerate(options) if opt["id"] == my_chosen_card["id"])
         
         clue_words = set(re.findall(r'\w+', clue.lower())) if clue else set()
-        opcoes = ""
-
+        candidates = []
         for i, opt in enumerate(options):
             if i == my_idx:
                 continue
@@ -229,10 +228,31 @@ class Versao2(BaseAgent):
                     lambda m: m.group(0).upper() if m.group(0).lower() in clue_words else m.group(0),
                     short_lyrics
                 )
-            if is_suspect:
-                opcoes += f"Opcao (SUSPEITA) {i}: {short_lyrics}\n\n"
+            candidates.append({
+                "idx": i,
+                "is_suspect": is_suspect,
+                "lyrics": short_lyrics
+            })
+
+        suspects = [c for c in candidates if c["is_suspect"]]
+        if suspects:
+            chosen_suspect = suspects[0]
+            others = [c for c in candidates if c["idx"] != chosen_suspect["idx"]]
+            to_include = [chosen_suspect]
+            if others:
+                to_include.append(others[0])
+            to_include.sort(key=lambda x: x["idx"])
+        else:
+            to_include = candidates
+
+        opcoes = ""
+        for c in to_include:
+            idx = c["idx"]
+            lyrics = c["lyrics"]
+            if c["is_suspect"]:
+                opcoes += f"Opcao (SUSPEITA) {idx}: {lyrics}\n\n"
             else:
-                opcoes += f"Opcao {i}: {short_lyrics}\n\n"
+                opcoes += f"Opcao {idx}: {lyrics}\n\n"
         
 
 
