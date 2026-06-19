@@ -122,10 +122,10 @@ class Versao2(BaseAgent):
             "Voce eh um jogador de Dixit jogando com musicas.\n"
             "Instrução:\n"
             f"Dado a letra da música, forneça uma dica usando no maximo {max_words} palavras.\n"
-            "Lembre-se: a dica deve ser criativa, mas não pode ser nem muito difícil nem muito fácil de adivinhar. Por exemplo, "
-            "pegue o elemento principal da canção e substitua por algo relacionado a ele. Se o elemento for algo muito específico "
-            "não use-o, pegue outro. Tente buscar por coisas genéricas para poder usar a dica.\n"
-            "NÃO COLOQUE PALAVRAS QUE ESTEJAM NA MUSICA, PRINCIPALMENTE AS MAIS ÓBVIAS.\n"
+            "A dica não deve conter palavras da música pois isso seria muito óbvio.\n"
+            "Ela deve ser criativaa ponto que faça o adversário fazer analogia sobre o significo. Por exemplo, "
+            "Pegue um elemento que não seja o principal, represente-o de outra forma, podendo ser com uma situação"
+            ", expressão, gesto, sentimento, provérbio.\n"
             "Entrada:\n"
             f"\n{short_lyrics}\n\n"
             "Formato de saída:\n"
@@ -214,32 +214,41 @@ class Versao2(BaseAgent):
     async def vote(self, clue: str, options: List[Dict[str, Any]], my_chosen_card: Dict[str, Any]) -> Dict[str, Any]:
         my_idx = next(i for i, opt in enumerate(options) if opt["id"] == my_chosen_card["id"])
         
+        clue_words = set(re.findall(r'\w+', clue.lower())) if clue else set()
         opcoes = ""
 
         for i, opt in enumerate(options):
             if i == my_idx:
                 continue
             short_lyrics = shorten_lyrics(opt.get("lyrics", ""))
-            short_lyrics = " ".join(short_lyrics.split()[:30])
-            opcoes += f"Opcao {i}: {short_lyrics}\n\n"
-
+            short_lyrics = " ".join(short_lyrics.split())
+            is_suspect = clue_words and clue_words.issubset(set(re.findall(r'\w+', short_lyrics.lower())))
+            if clue_words:
+                short_lyrics = re.sub(
+                    r'\w+',
+                    lambda m: m.group(0).upper() if m.group(0).lower() in clue_words else m.group(0),
+                    short_lyrics
+                )
+            if is_suspect:
+                opcoes += f"Opcao (SUSPEITA) {i}: {short_lyrics}\n\n"
+            else:
+                opcoes += f"Opcao {i}: {short_lyrics}\n\n"
         
+
+
         prompt = (
             "Contexto:\n"
             f"Voce e um jogador de Dixit votando nas musicas dos adversarios.\n"
             "Instrução:\n"
             "Dada a dica e as opções quais são as duas melhores que se encaixam com o conceito original da dica. Lembrando que há cartas escolhidas"
-            " propositalmente com ideias parecidas por outros jogadores. Existe apenas uma correta. Quando for avaliar, se a dica possuir todas as palavras "
-            "da opção, marque essa. Se for algumas, suspeite."
+            " propositalmente com ideias parecidas por outros jogadores. Existe apenas uma correta. Marquei em maiúsculo nas opções aquelas palavras que também estão"
+            "na dica, se possuir muitas palavras da dica, é provavel que seja a correta, mas não descarte as outras por isso. Opções SUSPEITAS contêm todas as palavras "
+            "da dica, então provavelmente é essa opção.\n"
             "Entrada:\n"
             f"Dica: '{clue}'\n"
             f"Opções: \n{opcoes}\n\n"
             "Formato de saída:\n"
             "Responda com dois números inteiros separados por vírgula: n, m\n"
-            "Exemplo de Respostas:\n"
-            "1, 2\n"
-            "3, 1\n"
-            "0, 2\n"
             "Saída:\n"
         )
 
