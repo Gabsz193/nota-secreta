@@ -253,8 +253,6 @@ class Versao2(BaseAgent):
                 opcoes += f"Opcao (SUSPEITA) {idx}: {lyrics}\n\n"
             else:
                 opcoes += f"Opcao {idx}: {lyrics}\n\n"
-        
-
 
         prompt = (
             "Contexto:\n"
@@ -268,7 +266,7 @@ class Versao2(BaseAgent):
             f"Dica: '{clue}'\n"
             f"Opções: \n{opcoes}\n\n"
             "Formato de saída:\n"
-            "Responda com dois números inteiros separados por vírgula: n, m\n"
+            "Responda com dois números pertencentes às opções separados por vírgula: n, m\n"
             "Saída:\n"
         )
 

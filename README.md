@@ -1,215 +1,157 @@
-# Nota Secreta — solução de referência comentada
+# Nota Secreta - Agente Dixit com LLM
 
-Este projeto contém uma **versão comentada e simplificada** do jogo **Nota Secreta**,
-usada como base para a implementação do agente estratégico da disciplina.
-
-A ideia é que você possa:
-
-- entender a arquitetura do sistema;
-- rodar partidas localmente;
-- testar seu agente em modo mock ou com um modelo real;
-- modificar principalmente `llm_agent.py` e, se desejar, `base_agent.py`.
+Este repositório contém a implementação de um agente de IA para jogar **Nota Secreta** (um jogo inspirado em Dixit adaptado para trechos de músicas brasileiras) utilizando modelos de linguagem locais (LLM).
 
 ---
 
-## 1. Visão geral da arquitetura
-
-O projeto combina dois estilos de comunicação:
-
-- **REST/FastAPI** entre os agentes e o serviço LLM centralizado (`llm_service.py`);
-- **A2A / JSON-RPC** entre o Game Master e os agentes.
-
-Em uma execução típica:
-
-1. o `run_game.py` sobe o serviço LLM;
-2. sobe o `game_master.py`;
-3. sobe 1 agente estratégico e 5 agentes aleatórios;
-4. registra os agentes no Game Master;
-5. executa uma partida completa;
-6. salva um log da partida em `logs/`.
+## Integrantes do Grupo
+* **Luiz Gabriel Antunes Sena**
+* **Marcos Paulo Vieira Pedrosa**
+* **Letícia Souza de Souza**
 
 ---
 
-## 2. Estrutura dos arquivos
+## Repositório e Instalação
 
-Arquivos principais:
+* **Repositório:** [Gabsz193/nota-secreta](https://github.com/Gabsz193/nota-secreta)
 
-- `fasta2a.py`: mini-implementação de `A2AApp` e `@tool`
-- `base_agent.py`: utilidades comuns para agentes
-- `llm_service.py`: serviço LLM centralizado (real ou mock)
-- `game_master.py`: coordenação da partida, votação, pontuação e logs
-- `llm_agent.py`: agente estratégico a ser estudado e modificado
-- `random_agent.py`: baseline aleatório
-- `run_game.py`: sobe tudo e executa uma partida completa
-- `render_log_readable.py`: transforma logs em uma visualização mais legível
-- `brazilian_songs.csv`: base de músicas usada pelo jogo
-- `tests/`: testes auxiliares
+### Passo a Passo de Instalação:
 
----
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/Gabsz193/nota-secreta.git
+   cd nota-secreta
+   ```
 
-## 3. O que você deve modificar
+2. Crie e ative o ambiente virtual Python:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
 
-Em geral, os arquivos mais importantes para o aluno são:
+3. Instale as dependências:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- `llm_agent.py`
-- `base_agent.py` (opcional)
-
-Você pode reorganizar a lógica interna do agente, desde que preserve a interface esperada
-pelo restante da infraestrutura.
-
-As ferramentas (tools) esperadas do agente são:
-
-- `receive_hand(hand)`
-- `choose_card()`
-- `send_clue(lyrics, max_words=6)`
-- `select_card_by_clue(clue)`
-- `vote(clue, options, my_chosen_card)`
+4. Baixe o modelo LLM executando o script fornecido:
+   ```bash
+   chmod +x download_model.sh
+   ./download_model.sh
+   ```
+   *(Este script realiza o download do arquivo `Phi-3.5-mini-instruct-Q4_K_M.gguf` necessário para rodar o serviço de linguagem local).*
 
 ---
 
-## 4. Instalação
+## Como Executar o Código
 
-Crie e ative um ambiente virtual:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Instale as dependências:
+Você pode iniciar o fluxo completo do jogo através do script principal `start_game.sh`:
 
 ```bash
-python3 -m pip install -r requirements.txt
+chmod +x start_game.sh
+./start_game.sh
 ```
+
+Esse script realiza as seguintes etapas automaticamente:
+1. Ativa o ambiente virtual `.venv`.
+2. Inicia o serviço LLM local em segundo plano (`llm_service.py`) usando o modelo baixado.
+3. Inicia o Game Master (`game_master.py`) e registra os agentes da partida.
+4. Executa a simulação completa do jogo (`run_game.py`).
+5. Finaliza e analisa o resultado da partida gerando o placar via `analyze_logs.py`.
+
+### Visualizando a Ajuda e Parâmetros:
+Para rodar diretamente o script de execução e visualizar todas as opções e parâmetros disponíveis:
+
+```bash
+source .venv/bin/activate
+python3 run_game.py --help
+```
+*(ou execute diretamente usando o interpretador do venv: `.venv/bin/python run_game.py --help`)*
 
 ---
 
-## 5. Execução rápida
+## Exemplo de Saída Esperada
 
-### 5.1. Rodar em modo mock
-
-Esse modo não usa um modelo real e é útil para validar rapidamente a arquitetura:
-
-```bash
-python3 run_game.py --force-mock
-```
-
-### 5.2. Rodar com um modelo GGUF real
-
-```bash
-python3 run_game.py --model /caminho/do/modelo.gguf
-```
-
-Exemplo:
-
-```bash
-python3 run_game.py --model ~/Documentos/LLM/Phi-3.5-mini-instruct-Q4_K_M.gguf
-```
-
----
-
-## 6. Opções úteis do `run_game.py`
-
-### Subir 6 agentes estratégicos
-
-```bash
-python3 run_game.py --all-strategic --force-mock
-```
-
-ou:
-
-```bash
-python3 run_game.py --all-strategic --model /caminho/do/modelo.gguf
-```
-
-### Alterar a base de músicas
-
-```bash
-python3 run_game.py --db outra_base.csv --force-mock
-```
-
-### Ajustar concorrência do serviço LLM
-
-```bash
-python3 run_game.py --model /caminho/do/modelo.gguf --llm-max-concurrency 1
-```
-
----
-
-## 7. Logs
-
-Ao final da partida, o Game Master salva um log JSON em:
+### 1. Resumo do Log (Console)
+Ao finalizar a partida, o script de análise exibirá uma saída semelhante a esta no terminal:
 
 ```text
-logs/
+==========================================
+Jogo finalizado! Analisando os resultados...
+==========================================
+Analisando o log mais recente: logs/partida_20260619_031441.json
+
+Placar final:
+  Agente 1: 26 pontos
+  Agente 2: 19 pontos
+  Agente 3: 19 pontos
+  Agente 4: 16 pontos
+  Agente 5: 13 pontos
+  Agente 6: 30 pontos
+
+Dicas geradas pelo nosso agente (LLMAgent_1):
+  Rodada 1: Dica -> 'Amor escondido em um brinde não'
+  Rodada 7: Dica -> 'Ímã atrai ferragem'
 ```
 
-O caminho do log também é mostrado no terminal ao fim da execução.
+### 2. Detalhes de Rodadas Completas (Visualização Legível)
+Abaixo está a representação legível das **duas primeiras rodadas completas** da partida utilizando a ferramenta de leitura de logs do jogo:
 
-Esses logs ajudam a entender:
+```text
+round 1
+Clue (agent 0 - LLMAgent_1): "Amor escondido em um brinde não"
+id  card_id  title              0  1  2  3  4  5  Pts  Acm  New id  New lyrics
+--  -------  -----------------  -  -  -  -  -  -  ---  ---  ------  ------------
+0   116      Último Desejo         x           x  3    3    182     Vou Deixar
+1   168      Modinha                  x     x  x  6    6    133     Sonífera Ilha
+2   129      Uma Brasileira              x  x     2    2    103     Eu Nasci Há Dez Mil Anos Atrás
+3   12       Domingo no Parque                    0    0    221     Chalana
+4   152      Marina                               0    0    102     O Barquinho
+5   138      Te Ver                x  x  x        6    6    131     Brincar de Viver
 
-- qual agente foi narrador em cada rodada;
-- qual dica foi produzida;
-- quais cartas foram jogadas;
-- como os votos foram distribuídos;
-- como a pontuação evoluiu ao longo da partida.
-
----
-
-## 8. Como ler os logs
-
-Para transformar um log em uma visualização mais legível:
-
-```bash
-python3 render_log_readable.py logs/partida_xxx.json
+round 2
+Clue (agent 1 - RandomAgent_2): "amor não deixa contas fazer madrugada"
+id  card_id  title                   0  1  2  3  4  5  Pts  Acm  New id  New lyrics
+--  -------  ----------------------  -  -  -  -  -  -  ---  ---  ------  -----------------
+0   41       Bem Que Se Quis                  x        4    7    188     Aguenta Coração
+1   190      Pintura Íntima          x              x  3    9    172     Sá Marina
+2   194      Sentimental Demais      x           x  x  3    5    177     Amor Maior
+3   58       O Mar                         x           1    1    169     Malemolência
+4   150      Super-Homem - A Canção                    0    0    125     Além do Horizonte
+5   70       Anna Julia                    x  x  x     6    12   143     Minha Namorada
 ```
 
 ---
 
-## 9. Observações sobre a base de músicas
+## Descrição dos Prompts e Heurísticas Implementadas
+Todas as lógicas de prompts e heurísticas específicas para o agente estratégico estão concentradas no arquivo [versao2.py](file:///home/luizg/nota-secreta/versao2.py):
 
-A base CSV deve conter, no mínimo, as colunas:
+1. **Escolha de Cartas (`choose_card`)**:
+   O prompt orienta a LLM a selecionar, dentre as cartas de sua mão, aquela que possua as expressões mais genéricas e passíveis de representações criativas. Isso ajuda o agente a formular pistas que não sejam nem óbvias demais (onde todos acertam) nem obscuras demais (onde ninguém acerta).
 
-- `id`
-- `title`
-- `artist`
-- `lyrics`
+2. **Envio de Dicas (`send_clue`)**:
+   Instrui a LLM a gerar uma pista com no máximo 6 palavras que evite conter termos presentes na letra original da música. A dica deve ser baseada em sentimentos secundários, provérbios ou analogias. 
 
-A base fornecida aqui serve para testes e desenvolvimento local.
-Na avaliação, vai ser usada uma base oficial definida pelo professor.
+3. **Associação de Dica (`select_card_by_clue`)**:
+   Auxilia a LLM a selecionar a melhor música que se encaixe na dica proposta por outro jogador de forma a "enganar" os demais adversários e receber votos.
 
----
-
-## 10. Objetivo pedagógico
-
-O foco deste trabalho não é apenas “fazer um agente funcionar”, mas construir
-um **sistema multiagente baseado em LLM**.
-
-Por isso, espera-se que o agente:
-
-- use a LLM para decisões semânticas;
-- lide com respostas imperfeitas de forma robusta;
-- preserve o protocolo esperado pela infraestrutura.
-
-Em outras palavras:
-
-> a implementação interna pode variar, mas a interface externa do agente deve continuar compatível.
+4. **Tomada de Voto Inteligente (`vote`)**:
+   * **Highlighting**: O agente identifica termos que aparecem tanto na dica (`clue`) quanto no trecho das letras candidatas e as transforma para **MAIÚSCULO**. Isso auxilia na contextualização rápida da LLM sobre possíveis coincidências.
+   * **Detecção de Candidato Suspeito**: Caso uma música possua *todas* as palavras da dica, ela é rotulada como `Opcao (SUSPEITA) {idx}`.
+   * **Heurística de Filtragem Crítica**: Se houver um candidato suspeito, o agente reduz drasticamente a lista de opções apresentadas no prompt da LLM, mantendo **apenas** a opção suspeita e **uma outra** alternativa qualquer. Isso força o modelo de linguagem local a concentrar sua escolha nos caminhos mais prováveis de voto correto, melhorando significativamente a acurácia sob limitações do modelo local.
 
 ---
 
-## 11. Resumo
+## Dificuldades Encontradas e Soluções
 
-Use esta versão do projeto para:
+1. **Alinhamento do Formato de Saída com LLMs Locais**:
+   * *Problema:* Modelos locais pequenos (como o Phi-3.5) tendem a divagar ou falhar em restrições rígidas (por exemplo, retornar apenas um número ou formato estrito como `n, m`).
+   * *Solução:* Criação de parsers regex robustos na classe base para capturar inteiros no texto gerado e implementação de listas de fallbacks aleatórios seguros caso o parse falhe.
 
-- entender a arquitetura;
-- rodar testes locais;
-- modificar o agente estratégico;
-- experimentar diferentes prompts e estratégias.
+2. **Dicas Muito Longas ou Óbvias**:
+   * *Problema:* Modelos geravam frases excessivas ou usavam termos literais da letra da música.
+   * *Solução:* Validação de substring no agente estratégico para zerar e regenerar a pista com base em palavras-chave extraídas da música, além de limpeza manual de cabeçalhos redundantes de geração.
 
-Fluxo mínimo recomendado:
-
-1. rodar `python3 run_game.py --force-mock`
-2. rodar `python3 run_game.py --model ...`
-3. inspecionar os logs
-4. modificar `llm_agent.py`
-5. repetir os testes
+3. **Otimização do Foco de Voto**:
+   * *Problema:* Quando havia muitas opções parecidas, a LLM local se confundia sobre qual escolher e esquecia as instruções de buscar palavras exatas.
+   * *Solução:* Destacamos as palavras sobrepostas em letras maiúsculas e introduzimos a heurística de limitar as opções do prompt para conter apenas a suspeita e mais uma opção alternativa quando uma suspeita clara é identificada.
